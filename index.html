@@ -86,11 +86,27 @@
 
       .modal-content {
         background-color: #fff;
-        padding: 20px;
+        padding: 30px;
         border-radius: 12px;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         max-width: 600px;
         margin: 0 auto;
+        position: relative;
+      }
+
+      #backButton {
+        position: relative;
+        padding: 8px;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s, color 0.3s;
+      }
+      
+      #backButton:hover {
+        background-color: #2980b9;
       }
 
       .close {
@@ -99,6 +115,7 @@
         font-size: 24px;
         font-weight: bold;
         color: #333;
+        padding-bottom: 50;
       }
 
       .menu {
@@ -156,6 +173,7 @@
     <div id="modal">
       <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
+        <button id="backButton" onclick="restorePreviousState()">Back</button>
         <h2 id="modalTitle"></h2>
         <p id="modalDescription"></p>
       </div>
@@ -163,6 +181,7 @@
 
     <script>
       let historicalEntities;
+      let prevData = [];
 
       // Lấy dữ liệu lịch sử
       fetch("data/full.json")
@@ -244,11 +263,29 @@
         modalTitle.textContent = title;
         // modalDescription.innerHTML = `<p>${description}</p>`;
         modalDescription.innerHTML = `<p>${description}</p> ${connectList}`;
+        const backButton = document.getElementById("backButton");
+        prevData.push({ name: title, description: description, connect: connect });
+        if (prevData.length > 1) {
+          backButton.style.display = "block";
+        } else {
+          backButton.style.display = "none";
+        }
         modal.style.display = "flex";
       }
 
       function closeModal() {
         modal.style.display = "none";
+        // reset data after close modal
+        prevData = [];
+      }
+
+      function restorePreviousState() {
+        if (prevData.length > 1) {
+          prevData.pop();
+          const data = prevData[prevData.length - 1];
+          prevData.pop();
+          openModal(data.name, data.description, data.connect);
+        }
       }
 
       searchInput.addEventListener("input", function () {
