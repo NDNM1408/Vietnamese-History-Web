@@ -7,11 +7,12 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 
-
+/**
+ * Lớp dùng để thu thập nhân vật lịch sử trên Người Kể Sử
+ * @since: 15/01/2023
+ */
 public class CrawlCharacterNKS extends Crawler{
 
     public CrawlCharacterNKS() {
@@ -30,15 +31,10 @@ public class CrawlCharacterNKS extends Crawler{
         Document doc;
         try {
             doc = Jsoup.connect(url).userAgent("Jsoup client").timeout(20000).get();
-            doc.charset(Charset.forName("utf-8"));
-            // System.out.println(doc.toString());
             Elements link = doc.select("div.item-content > div > h2 > a");
             for (Element element:link){
                 // Name and ID
                 String name = element.text();
-                byte[] utf8Bytes = name.getBytes(StandardCharsets.UTF_8);
-                name = new String(utf8Bytes, StandardCharsets.UTF_8);
-
                 String id = super.getRoot() + element.attr("href");
                 System.out.println(name);
                 System.out.println(id);
@@ -47,11 +43,12 @@ public class CrawlCharacterNKS extends Crawler{
                 object.put("id", id);
                 // Information
                 String information = "";
+                information += scrapeInfobox(id);
                 information += scrapeInformation(id,"div.com-content-article__body > p:first-of-type");
                 object.put("info", information);
                 // Connection
                 object.put("connect",scrapeConnect(id,"p > a"));
-                
+
                 super.getOutput().add(object);
                 System.out.println(super.getOutput().size());
             }
@@ -68,5 +65,25 @@ public class CrawlCharacterNKS extends Crawler{
         }
     }
 
-    
+    public String scrapeInfobox(String url) {
+        Document doc;
+        String description = "";
+        try {
+            // Scrape info box
+            doc = Jsoup.connect(url).userAgent("Jsoup client").timeout(20000).get();
+            Elements tr = doc.select("div.infobox > table > tbody > tr");
+            if(tr != null && tr.size() > 0){
+                for (int i = 4; i < tr.size(); i++){
+                    Element th = tr.get(i).selectFirst("th");
+                    Element td = tr.get(i).selectFirst("td");
+                    if(th != null && td != null){
+                        description += th.text() + ": " + td.text() + "\n";
+                    }
+                }
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+        return description;
+    }
 }

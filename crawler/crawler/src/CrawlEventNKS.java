@@ -1,5 +1,4 @@
 
-
 import org.json.simple.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,8 +8,10 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-
-
+/**
+ * Lớp dùng để thu thập sự kiện lịch sử trên Người Kể Sử
+ * @since: 15/01/2023
+ */
 public class CrawlEventNKS extends Crawler{
     public CrawlEventNKS() {
         super.setRoot("https://nguoikesu.com");
@@ -39,6 +40,7 @@ public class CrawlEventNKS extends Crawler{
                 object.put("id", id);
                 // Information
                 String information = "";
+                information += scrapeInfobox(id);
                 information += scrapeInformation(id,"div.com-content-article__body > p:first-of-type");
                 object.put("info", information);
                 // Connection
@@ -59,4 +61,32 @@ public class CrawlEventNKS extends Crawler{
             e.printStackTrace();
         }
     }
+
+    /**
+     * Lấy dữ liệu từ các infobox
+     * @param url
+     * @return
+     */
+    public String scrapeInfobox(String url) {
+        Document doc;
+        String description = "";
+        try {
+            // Scrape info box
+            doc = Jsoup.connect(url).userAgent("Jsoup client").timeout(20000).get();
+            Elements tr = doc.select("div.infobox > table > tbody > tr > td > table > tbody > tr:nth-of-type(3) > td > table > tbody > tr");
+            if(tr != null && tr.size() > 0){
+                for (int i = 0; i < tr.size(); i++){
+                    Element th = tr.get(i).selectFirst("td:first-of-type > b");
+                    Element td = tr.get(i).selectFirst("td:nth-of-type(2)");
+                    if(th != null && td != null){
+                        description += th.text() + ": " + td.text() + "\n";
+                    }
+                }
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+        return description;
+    }
+
 }

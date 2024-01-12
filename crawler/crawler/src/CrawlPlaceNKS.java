@@ -1,3 +1,4 @@
+
 import org.json.simple.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -8,7 +9,10 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 
 
-
+/**
+ * Lớp dùng để thu thập di tích lịch sử trên Người Kể Sử
+ * @since: 15/01/2023
+ */
 public class CrawlPlaceNKS extends Crawler{
     public CrawlPlaceNKS() {
         super.setRoot("https://nguoikesu.com");
@@ -37,6 +41,7 @@ public class CrawlPlaceNKS extends Crawler{
                 object.put("id", id);
                 // Information
                 String information = "";
+                information += scrapeInfobox(id);
                 information += scrapeInformation(id,"div.com-content-article__body > p:first-of-type" );
                 object.put("info", information);
                 // Connection
@@ -58,5 +63,30 @@ public class CrawlPlaceNKS extends Crawler{
         }
     }
 
-
+    /**
+     * Lấy dữ liệu từ các infobox
+     * @param url
+     * @return
+     */
+    public String scrapeInfobox(String url) {
+        Document doc;
+        String description = "";
+        try {
+            // Scrape info box
+            doc = Jsoup.connect(url).userAgent("Jsoup client").timeout(20000).get();
+            Elements tr = doc.select("div.infobox > table > tbody > tr");
+            if(tr != null && tr.size() > 0){
+                for (int i = 1; i < tr.size(); i++){
+                    Element th = tr.get(i).selectFirst("th");
+                    Element td = tr.get(i).selectFirst("td");
+                    if(th != null && td != null){
+                        description += th.text() + ": " + td.text() + "\n";
+                    }
+                }
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+        return description;
+    }
 }

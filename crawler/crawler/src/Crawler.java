@@ -87,7 +87,7 @@ public class Crawler {
         return info;
     }
 
-    public List<String> scrapeConnect(String url, String css) throws IOException{
+   public List<String> scrapeConnect(String url, String css) throws IOException{
         List<String> connection = null;
         Document doc;
         try {
@@ -111,7 +111,6 @@ public class Crawler {
             List<String> text = new ArrayList<>();
             for(String url:urls){
                 doc = Jsoup.connect(url).userAgent("Jsoup client").timeout(20000).get();
-                doc.charset(Charset.forName("UTF-8"));
                 Elements connect = doc.select(css);
                 for (Element element:connect){
                     if(!element.text().equals("")) text.add(element.text());
