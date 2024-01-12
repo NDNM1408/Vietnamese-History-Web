@@ -1,0 +1,9 @@
+{
+  "java.project.sourcePaths": ["src"],
+  "java.project.outputPath": "bin",
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar",
+    "e:\\Dowload\\Document IELTS Cô nhã\\jsoup-1.17.2.jar",
+    "e:\\Dowload\\Document IELTS Cô nhã\\json-simple-1.1.1.jar"
+  ]
+}

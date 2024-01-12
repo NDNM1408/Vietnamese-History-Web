@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vietnamese History</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f7f7f7;
+        color: #333;
+      }
+
+      header {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        text-align: center;
+        padding: 20px;
+        font-size: 32px;
+        font-weight: bold;
+        border-bottom: 2px solid #34495e;
+      }
+
+      main {
+        max-width: 900px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      #searchInput {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      #searchInput:focus {
+        border-color: #3498db;
+      }
+
+      #result {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 0;
+        margin: 20px 0 0 0;
+        list-style: none;
+      }
+
+      .entity {
+        background-color: #ecf0f1;
+        padding: 20px;
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        height: 150px; /* Set a fixed height for the entity block */
+        overflow: hidden; /* Hide content overflow */
+      }
+
+      .entity:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      #modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .close {
+        cursor: pointer;
+        float: right;
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .menu {
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .menu a {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 0 10px;
+        text-decoration: none;
+        color: #3498db;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      .menu a:hover {
+        background-color: #3498db;
+        color: #fff;
+      }
+
+      .menu a.active {
+        background-color: #3498db;
+        color: #fff;
+      }
+
+      @media (max-width: 768px) {
+        #result {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>Lịch sử Việt Nam</header>
+
+    <main>
+      <div class="menu">
+        <a href="#" onclick="filterEntities('All', this)" class="active"
+          >Tất cả</a
+        >
+        <a href="#" onclick="filterEntities('Character', this)">Nhân vật</a>
+        <a href="#" onclick="filterEntities('Dynasty', this)">Triều đại</a>
+        <a href="#" onclick="filterEntities('Event', this)">Sự kiện</a>
+        <a href="#" onclick="filterEntities('Festival', this)">Lễ hội</a>
+        <a href="#" onclick="filterEntities('Place', this)">Địa điểm</a>
+      </div>
+
+      <input type="text" id="searchInput" placeholder="Nhập để tìm kiếm..." />
+      <ul id="result"></ul>
+    </main>
+
+    <div id="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle"></h2>
+        <p id="modalDescription"></p>
+      </div>
+    </div>
+
+    <script>
+      let historicalEntities;
+
+      // Lấy dữ liệu lịch sử
+      fetch("data/full.json")
+        .then((response) => response.json())
+        .then((data) => {
+          historicalEntities = data;
+          searchEntities("");
+        })
+        .catch((error) => console.error("Error fetching data:", error));
+
+      const searchInput = document.getElementById("searchInput");
+      const resultContainer = document.getElementById("result");
+      const modal = document.getElementById("modal");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalDescription = document.getElementById("modalDescription");
+
+      // Lọc dữ liệu tùy vào loại thực thể muốn click
+      function filterEntities(entityType, tabElement) {
+        document
+          .querySelectorAll(".menu a")
+          .forEach((tab) => tab.classList.remove("active"));
+
+        tabElement.classList.add("active");
+
+        searchEntities("", entityType);
+      }
+
+      // Hàm chuyển đổi chữ có dấu thành chữ không dấu
+      function removeVietnameseTones(str) {
+        return str
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+      }
+
+      function searchEntities(query, entityType) {
+        resultContainer.innerHTML = "";
+
+        // Chuyển đổi query và tên của các đối tượng thành chữ không dấu
+        const normalizedQuery = removeVietnameseTones(query.toLowerCase());
+
+        const filteredEntities = historicalEntities.filter(
+          (entity) =>
+            (entityType === "All" || entity.type === entityType) &&
+            removeVietnameseTones(entity.name.toLowerCase()).includes(
+              normalizedQuery
+            )
+        );
+
+        // Chạy qua từng thực thể đã được lọc và tạo mỗi sự kiện lịch sử là một list
+        filteredEntities.forEach((entity) => {
+          const listItem = document.createElement("li");
+          listItem.className = "entity";
+          listItem.innerHTML = `<strong>${entity.name}</strong>
+          <p>${entity.description}</p>
+          `;
+          listItem.addEventListener("click", () =>
+            openModal(entity.name, entity.description, entity.connect)
+          );
+          resultContainer.appendChild(listItem);
+        });
+      }
+      // hanlde show detail model link
+      function handleShowDetail(data) {
+        console.log("click");
+        const find = historicalEntities.filter((item) => item.name === data);
+        if (find.length > 0) {
+          let ele = find[0];
+          openModal(ele.name, ele.description, ele.connect);
+        }
+      }
+
+      function openModal(title, description, connect) {
+        const connectList = connect
+          .map(function (item) {
+            return `<button onclick="handleShowDetail('${item}')">${item}</button>`;
+          })
+          .join(" ");
+        modalTitle.textContent = title;
+        // modalDescription.innerHTML = `<p>${description}</p>`;
+        modalDescription.innerHTML = `<p>${description}</p> ${connectList}`;
+        modal.style.display = "flex";
+      }
+
+      function closeModal() {
+        modal.style.display = "none";
+      }
+
+      searchInput.addEventListener("input", function () {
+        const selectedTab = document.querySelector(".menu a.active");
+        const selectedEntityType = selectedTab
+          ? selectedTab.innerText.trim()
+          : "";
+        searchEntities(this.value, selectedEntityType);
+      });
+
+      window.addEventListener("click", function (event) {
+        if (event.target === modal) {
+          closeModal();
+        }
+      });
+
+      // Initial search to display all entities
+      searchEntities("", "All");
+    </script>
+  </body>
+</html>
